@@ -91,7 +91,7 @@ void color_bgr(color_t color, struct color_video_stream_s *video,
 	       unsigned char *from, unsigned char *to);
 
 /* unfortunately over- and underflows will occur */
-__inline__ unsigned char color_clamp(int val)
+static __inline__ unsigned char color_clamp(int val)
 {
 	if (val > 255)
 		return 255;
