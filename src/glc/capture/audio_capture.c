@@ -103,6 +103,7 @@ int audio_capture_set_format(audio_capture_t audio_capture,
 		audio_capture->format = format;
 		audio_capture->flags |= AUDIO_CAPTURE_CFG_CHANGED;
 	}
+	return 0;
 }
 
 int audio_capture_set_rate(audio_capture_t audio_capture,

@@ -142,10 +142,7 @@ int glc_state_clear(glc_t *glc, int flag)
 	return 0;
 }
 
-int glc_state_test(glc_t *glc, int flag)
-{
-	return (glc->state_flags & flag);
-}
+// Implementation of glc_state_test is located in state.h
 
 glc_utime_t glc_state_time(glc_t *glc)
 {

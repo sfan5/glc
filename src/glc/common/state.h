@@ -93,7 +93,11 @@ __PUBLIC int glc_state_clear(glc_t *glc, int flag);
  * \param flag flag to test
  * \return 1 if flag is set, otherwise 0
  */
-__PUBLIC __inline__ int glc_state_test(glc_t *glc, int flag);
+__PUBLIC static __inline__ int glc_state_test(glc_t *glc, int flag)
+{
+	return (glc->state_flags & flag);
+}
+
 
 /**
  * \brief get state time

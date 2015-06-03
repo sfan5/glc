@@ -69,7 +69,7 @@ __PUBLIC int pack_set_compression(pack_t pack, int compression);
  * \param min_size minimum packet size
  * \return 0 on success otherwise an error code
  */
-__PUBLIC int pack_set_minimum_size(pack_t pack, size_t min_size);
+__PUBLIC int pack_set_minimum_size(pack_t pack, ssize_t min_size);
 
 /**
  * \brief start processing threads
