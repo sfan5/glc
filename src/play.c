@@ -370,7 +370,7 @@ int play_stream(struct play_s *play)
 	 Playback uses following pipeline:
 
 	 file -(uncompressed)->     reads data from stream file
-	 unpack -(uncompressed)->   decompresses lzo/quicklz packets
+	 unpack -(uncompressed)->   decompresses compressed packets
 	 rgb -(rgb)->               does conversion to BGR
 	 scale -(scale)->           does rescaling
 	 color -(color)->           applies color correction
@@ -499,7 +499,7 @@ int stream_info(struct play_s *play)
 	 Info uses following pipeline:
 
 	 file -(uncompressed_buffer)->     reads data from stream file
-	 unpack -(uncompressed_buffer)->   decompresses lzo/quicklz packets
+	 unpack -(uncompressed_buffer)->   decompresses compressed packets
 	 info -(rgb)->              shows stream information
 	*/
 
@@ -565,7 +565,7 @@ int export_img(struct play_s *play)
 	 Export img uses following pipeline:
 
 	 file -(uncompressed_buffer)->     reads data from stream file
-	 unpack -(uncompressed_buffer)->   decompresses lzo/quicklz packets
+	 unpack -(uncompressed_buffer)->   decompresses compressed packets
 	 rgb -(rgb)->               does conversion to BGR
 	 scale -(scale)->           does rescaling
 	 color -(color)->           applies color correction
@@ -680,7 +680,7 @@ int export_yuv4mpeg(struct play_s *play)
 	 Export yuv4mpeg uses following pipeline:
 
 	 file -(uncompressed_buffer)->     reads data from stream file
-	 unpack -(uncompressed_buffer)->   decompresses lzo/quicklz packets
+	 unpack -(uncompressed_buffer)->   decompresses compressed packets
 	 scale -(scale)->           does rescaling
 	 color -(color)->           applies color correction
 	 ycbcr -(ycbcr)->           does conversion to Y'CbCr (if necessary)
@@ -795,7 +795,7 @@ int export_wav(struct play_s *play)
 	 Export wav uses following pipeline:
 
 	 file -(uncompressed_buffer)->     reads data from stream file
-	 unpack -(uncompressed_buffer)->   decompresses lzo/quicklz packets
+	 unpack -(uncompressed_buffer)->   decompresses compressed packets
 	 wav -(rgb)->               write audio to file in wav format
 	*/
 

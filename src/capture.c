@@ -166,7 +166,7 @@ usage:
 	       "  -n, --lock-fps             lock fps when capturing\n"
 	       "      --pbo                  use GL_ARB_pixel_buffer_object if available\n"
 	       "  -z, --compression=METHOD   compress stream using METHOD\n"
-	       "                               'none', 'quicklz' and 'lzo' are supported\n"
+	       "                               'none', 'quicklz', 'lzo' and 'lzjb' are supported\n"
 	       "                               'quicklz' is used by default\n"
 	       "      --sync                 force synchronized write mode\n"
 	       "      --byte-aligned         use GL_PACK_ALIGNMENT 1 instead of 8\n"
