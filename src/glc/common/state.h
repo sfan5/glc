@@ -93,6 +93,7 @@ __PUBLIC int glc_state_clear(glc_t *glc, int flag);
  * \param flag flag to test
  * \return 1 if flag is set, otherwise 0
  */
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
 __PUBLIC static __inline__ int glc_state_test(glc_t *glc, int flag)
 {
