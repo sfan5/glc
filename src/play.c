@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 	struct play_s play;
 	play.action = action_play;
 	const char *val_str = NULL;
-	int opt, option_index;
+	int opt;
 
 	struct option long_options[] = {
 		{"info",		1, NULL, 'i'},
@@ -105,7 +105,6 @@ int main(int argc, char *argv[])
 		{"version",		0, NULL, 'V'},
 		{0, 0, 0, 0}
 	};
-	option_index = 0;
 
 	play.fps = 0;
 
