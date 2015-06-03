@@ -1,5 +1,6 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
+CMAKE_POLICY(SET CMP0003 NEW)
 
 PROJECT(glc)
 
@@ -30,6 +31,12 @@ OPTION(HOOK
        ON)
 OPTION(SCRIPTS
        "Install sample scripts."
+       OFF)
+OPTION(EXTERNAL_ELFHACKS
+       "Use external elfhacks"
+       OFF)
+OPTION(EXTERNAL_PACKETSTREAM
+       "Use external packetstream"
        OFF)
 
 IF (NOT GIT_DIR)

@@ -5,7 +5,6 @@ IF (NOT VERSION_HDR)
   SET(VERSION_HDR_DIR ${CMAKE_CURRENT_BINARY_DIR}/common)
   SET(VERSION_HDR ${VERSION_HDR_DIR}/version.h)
   ADD_EXECUTABLE(gen_version ../gen_version.c)
-  GET_TARGET_PROPERTY(GEN_VERSION gen_version LOCATION)
 
   IF (EXISTS ${GIT_DIR}/index)
     SET(VER_DEPENDS gen_version ${PROJECT_SOURCE_DIR}/CMakeLists.txt ${GIT_DIR}/index)
@@ -15,7 +14,7 @@ IF (NOT VERSION_HDR)
 
   ADD_CUSTOM_COMMAND(OUTPUT ${VERSION_HDR}
 		     COMMAND mkdir -p ${VERSION_HDR_DIR}
-		     COMMAND ${GEN_VERSION} "${VERSION_HDR}" "${GLC_VER}-git-" "${GIT_DIR}"
+		     COMMAND gen_version "${VERSION_HDR}" "${GLC_VER}-git-" "${GIT_DIR}"
 		     DEPENDS ${VER_DEPENDS}
 		     COMMENT "Generating version.h")
 ENDIF (NOT VERSION_HDR)
@@ -91,25 +90,25 @@ ENDMACRO(ADD_GLC_LIBRARY)
 
 IF (QUICKLZ)
   ADD_DEFINITIONS(-D__QUICKLZ)
-  INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/support/quicklz)
-  SET(QUICKLZ_SRC ${PROJECT_SOURCE_DIR}/support/quicklz/quicklz.h
-  		  ${PROJECT_SOURCE_DIR}/support/quicklz/quicklz.c)
+  INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/support/quicklz)
+  SET(QUICKLZ_SRC ${PROJECT_SOURCE_DIR}/src/support/quicklz/quicklz.h
+  		  ${PROJECT_SOURCE_DIR}/src/support/quicklz/quicklz.c)
 ENDIF (QUICKLZ)
 
 IF (LZO)
   ADD_DEFINITIONS(-D__MINILZO)
-  INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/support/minilzo)
-  SET(LZO_SRC ${PROJECT_SOURCE_DIR}/support/minilzo/minilzo.c
-  	      ${PROJECT_SOURCE_DIR}/support/minilzo/lzoconf.h
-  	      ${PROJECT_SOURCE_DIR}/support/minilzo/lzodefs.h
-  	      ${PROJECT_SOURCE_DIR}/support/minilzo/minilzo.h)
+  INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/support/minilzo)
+  SET(LZO_SRC ${PROJECT_SOURCE_DIR}/src/support/minilzo/minilzo.c
+  	      ${PROJECT_SOURCE_DIR}/src/support/minilzo/lzoconf.h
+  	      ${PROJECT_SOURCE_DIR}/src/support/minilzo/lzodefs.h
+  	      ${PROJECT_SOURCE_DIR}/src/support/minilzo/minilzo.h)
 ENDIF (LZO)
 
 IF (LZJB)
   ADD_DEFINITIONS(-D__LZJB)
-  INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/support/lzjb)
-  SET(LZJB_SRC ${PROJECT_SOURCE_DIR}/support/lzjb/lzjb.h
-  	       ${PROJECT_SOURCE_DIR}/support/lzjb/lzjb.c)
+  INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/support/lzjb)
+  SET(LZJB_SRC ${PROJECT_SOURCE_DIR}/src/support/lzjb/lzjb.h
+  	       ${PROJECT_SOURCE_DIR}/src/support/lzjb/lzjb.c)
 ENDIF (LZJB)
 
 SET(GLC_CORE_SRC "${COMMON_HDR};${CORE_HDR};${COMMON_SRC};${CORE_SRC};${LZO_SRC};${QUICKLZ_SRC};${LZJB_SRC}")

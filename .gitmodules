@@ -1,0 +1,9 @@
+[submodule "src/support"]
+	path = src/support
+	url = https://github.com/nullkey/glc-support
+[submodule "src/elfhacks"]
+	path = src/elfhacks
+	url = https://github.com/nullkey/elfhacks
+[submodule "src/packetstream"]
+	path = src/packetstream
+	url = https://github.com/nullkey/packetstream
