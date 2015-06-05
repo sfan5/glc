@@ -1,49 +1,52 @@
-#!/bin/bash
+#!/bin/bash -e
 #
 # encode.sh -- encoding glc stream to x264-encoded video
 # Copyright (C) 2007-2008 Pyry Haulos
 # For conditions of distribution and use, see copyright notice in glc.h
 
 FILE=""
-QUALITY=""
 
 AUDIO="1"
 VIDEO="1"
 
-BITRATE="2000"
-QP="20"
-CRF="18"
+QUALITY="19"
+BITRATE="8200k"
+MODE="vbr"
 
-METHOD="qp"
+AQUALITY="1"
+ABITRATE="224k"
+AMODE="vbr"
 
 OUTFMT="mp4"
 OUT="video.${OUTFMT}"
 
-PASSLOG="pass.log"
-AUDIOTMP="audio.mp3.tmp"
-
-MULTIPASS="no"
 ADDOPTS=""
 
 showhelp () {
 	echo "$0 [option]... [glc stream file]"
-	echo "  -o, --out=FILE       write video to FILE"
-	echo "                        default is ${OUT}"
-	echo "  -v, --video=NUM      video stream number"
-	echo "                        default is ${VIDEO}"
-	echo "  -a, --audio=NUM      audio stream number"
-	echo "                        default is ${AUDIO}"
-	echo "  -m, --method=METHOD  bitrate calculation method"
-	echo "                        supported methods are bitrate, qp, crf"
-	echo "                        default method is ${METHOD}"
-	echo "  -q, --quality=VAL    quality parameter"
-	echo "  -f, --outfmt=FORMAT  output container format"
-	echo "                        default is ${OUTFMT}"
-	echo "  -x, --addopts=OPTS   additional options to mencoder"
-	echo "  -h, --help           show this help"
+	echo "  -o, --out=FILE            write video to FILE"
+	echo "                             default is ${OUT}"
+	echo "  -v, --video=NUM           video stream number"
+	echo "                             default is ${VIDEO}"
+	echo "  -a, --audio=NUM           audio stream number"
+	echo "                             default is ${AUDIO}"
+	echo "  -m, --mode=MODE           video bitrate mode (vbr or cbr)"
+	echo "                             default mode is ${MODE}"
+	echo "  --audio-mode=MODE         audio bitrate mode (vbr or cbr)"
+	echo "                             default mode is ${AMODE}"
+	echo "  -q, --quality=VAL         video quality parameter"
+	echo "                             sets CRF in vbr mode, bitrate in cbr mode"
+	echo "                             default is ${QUALITY} (vbr) or ${BITRATE} (cbr)"
+	echo "  --audio-quality=VAL       audio quality parameter"
+	echo "                             sets quality in VBR mode, bitrate in cbr mode"
+	echo "                             default is ${AQUALITY} (vbr) or ${ABITRATE} (cbr)"
+	echo "  -f, --outfmt=FORMAT       output container format"
+	echo "                             default is ${OUTFMT}"
+	echo "  -x, --addopts=OPTS        additional ffmpeg options"
+	echo "  -h, --help                show this help"
 }
 
-OPT_TMP=`getopt -o o:v:a:m:q:f:x:h -l out:,video:,audio:,method:,quality:,outfmt:,addopts: \
+OPT_TMP=`getopt -o o:v:a:m:q:f:x:h -l out:,video:,audio:,mode:,audio-mode:,quality:,audio-quality:,outfmt:,addopts: \
 	-n "$0" -- "$@"`
 if [ $? != 0 ]; then showhelp; exit 1; fi
 
@@ -55,20 +58,36 @@ while true; do
 			OUT="$2"
 			shift 2
 			;;
+		-m|--mode)
+			MODE="$2"
+			shift 2
+			;;
+		--audio-mode)
+			AMODE="$2"
+			shift 2
+			;;
+		-q|--quality)
+			if [ ${MODE} == vbr ]; then
+				QUALITY="$2"
+			else
+				BITRATE="$2"
+			fi
+			shift 2
+			;;
+		--audio-quality)
+			if [ ${AMODE} == vbr ]; then
+				AQUALITY="$2"
+			else
+				ABITRATE="$2"
+			fi
+			shift 2
+			;;
 		-v|--video)
 			VIDEO="$2"
 			shift 2
 			;;
 		-a|--audio)
 			AUDIO="$2"
-			shift 2
-			;;
-		-m|--method)
-			METHOD="$2"
-			shift 2
-			;;
-		-q|--quality)
-			QUALITY="$2"
 			shift 2
 			;;
 		-f|--outfmt)
@@ -102,69 +121,33 @@ if [ "$FILE" == "" ]; then
 	exit 1
 fi
 
-KEYINT=300
+[ "$OUTFMT" == "mp4" ] && ADDOPTS="$ADDOPTS -movflags +faststart"
 
-X264_OPTS="ref=4:mixed_refs:bframes=3:b_pyramid:bime:weightb:direct_pred=auto:filter=-1,0:partitions=all:turbo=1:threads=auto:keyint=${KEYINT}"
-LAME_OPTS="q=4" # TODO configure q, cbr or abr
+AUDIOTMP="_tmp_audio$$.mp3"
+ENCOPTS="-c:v libx264 -preset slow"
+AENCOPTS="-c:a libmp3lame"
 
-case ${METHOD} in
-	crf)
-		[ "$QUALITY" != "" ] && CRF=$QUALITY
-		X264_OPTS="crf=${CRF}:${X264_OPTS}"
-		MULTIPASS="no"
-		;;
-	bitrate)
-		[ "$QUALITY" != "" ] && BITRATE=$QUALITY
-		X264_OPTS="bitrate=${BITRATE}:${X264_OPTS}"
-		MULTIPASS="yes"
-		;;
-	qp)
-		[ "$QUALITY" != "" ] && QP=$QUALITY
-		X264_OPTS="qp=${QP}:${X264_OPTS}"
-		MULTIPASS="yes"
-		;;
-	*)
-		showhelp
-		exit 1
-		;;
-esac
-
-[ "$OUTFMT" != "avi" ] && OUTFMT="lavf -lavfopts format=${OUTFMT}"
-
-glc-play "${FILE}" -o - -a "${AUDIO}" | lame -hV2 - "${AUDIOTMP}"
-
-if [ "${MULTIPASS}" == "no" ]; then
-	glc-play "${FILE}" -o - -y "${VIDEO}" | \
-		mencoder - \
-			-audiofile "${AUDIOTMP}"\
-			-demuxer y4m \
-			-ovc x264 \
-			-x264encopts "${X264_OPTS}" \
-			-of ${OUTFMT} \
-			${ADDOPTS} \
-			-o "${OUT}"
+if [ "$MODE" == "vbr" ]; then
+	ENCOPTS="$ENCOPTS -crf $QUALITY"
+elif [ "$MODE" == "cbr" ]; then
+	ENCOPTS="$ENCOPTS -b:v $BITRATE"
 else
-	glc-play "${FILE}" -o - -y "${VIDEO}" | \
-		mencoder - \
-			-nosound \
-			-demuxer y4m \
-			-ovc x264 \
-			-x264encopts "${X264_OPTS}:pass=1" \
-			-passlogfile "${PASSLOG}" \
-			-of ${OUTFMT} \
-			${ADDOPTS} \
-			-o "${OUT}"
-	glc-play "${FILE}" -o - -y "${VIDEO}" | \
-		mencoder - \
-			-audiofile "${AUDIOTMP}" \
-			-demuxer y4m \
-			-ovc x264 \
-			-x264encopts "${X264_OPTS}:pass=2" \
-			-passlogfile "${PASSLOG}" \
-			-oac copy \
-			-of ${OUTFMT} \
-			${ADDOPTS} \
-			-o "${OUT}"
+	echo "Invalid video bitrate mode."
+	exit 1
 fi
 
-rm -f "${PASSLOG}" "${AUDIOTMP}"
+if [ "$AMODE" == "vbr" ]; then
+	AENCOPTS="$AENCOPTS -q:a $AQUALITY"
+elif [ "$AMODE" == "cbr" ]; then
+	AENCOPTS="$AENCOPTS -b:a $ABITRATE"
+else
+	echo "Invalid audio bitrate mode."
+	exit 1
+fi
+
+glc-play "${FILE}" -o - -a "${AUDIO}" | ffmpeg -i - $AENCOPTS "${AUDIOTMP}"
+
+glc-play "${FILE}" -o - -y "${VIDEO}" | \
+	ffmpeg -i - -i "${AUDIOTMP}" -c:a copy $ENCOPTS $ADDOPTS "${OUT}"
+
+rm -f "${AUDIOTMP}"
