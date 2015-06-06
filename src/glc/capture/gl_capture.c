@@ -25,6 +25,7 @@
 #include <pthread.h>
 #include <dlfcn.h>
 #include <errno.h>
+#include <endian.h>
 
 #include <glc/common/glc.h>
 #include <glc/common/core.h>
@@ -41,6 +42,20 @@
 #define GL_CAPTURE_CROP            0x10
 #define GL_CAPTURE_LOCK_FPS        0x20
 #define GL_CAPTURE_IGNORE_TIME     0x40
+
+// GL_UNSIGNED_BYTE is equal to
+//   GL_UNSIGNED_INT_8_8_8_8_REV on little endian and
+//   GL_UNSIGNED_INT_8_8_8_8 on big endian
+// (ref: http://milkpot.sakura.ne.jp/gl/textureformat.html)
+// Those are often faster than using GL_UNSIGNED_BYTE directly,
+// however this optimization is only possible with 32bpp.
+static const GLenum format_32bpp_alt =
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	GL_UNSIGNED_INT_8_8_8_8_REV
+#else // __BIG_ENDIAN
+	GL_UNSIGNED_INT_8_8_8_8
+#endif
+;
 
 typedef void (*FuncPtr)(void);
 typedef FuncPtr (*GLXGetProcAddressProc)(const GLubyte *procName);
@@ -454,8 +469,10 @@ int gl_capture_get_pixels(gl_capture_t gl_capture, struct gl_capture_video_strea
 
 	glReadBuffer(gl_capture->capture_buffer);
 	glPixelStorei(GL_PACK_ALIGNMENT, gl_capture->pack_alignment);
-	glReadPixels(video->cx, video->cy, video->cw, video->ch, gl_capture->format, GL_UNSIGNED_BYTE, to);
-
+	if (gl_capture->bpp == 4)
+		glReadPixels(video->cx, video->cy, video->cw, video->ch, gl_capture->format, format_32bpp_alt, to);
+	else
+		glReadPixels(video->cx, video->cy, video->cw, video->ch, gl_capture->format, GL_UNSIGNED_BYTE, to);
 	glPopClientAttrib();
 	glPopAttrib();
 
@@ -591,7 +608,10 @@ int gl_capture_start_pbo(gl_capture_t gl_capture, struct gl_capture_video_stream
 	glReadBuffer(gl_capture->capture_buffer);
 	glPixelStorei(GL_PACK_ALIGNMENT, gl_capture->pack_alignment);
 	/* to = ((char *)NULL + (offset)) */
-	glReadPixels(video->cx, video->cy, video->cw, video->ch, gl_capture->format, GL_UNSIGNED_BYTE, NULL);
+	if (gl_capture->bpp == 4)
+		glReadPixels(video->cx, video->cy, video->cw, video->ch, gl_capture->format, format_32bpp_alt, NULL);
+	else
+		glReadPixels(video->cx, video->cy, video->cw, video->ch, gl_capture->format, GL_UNSIGNED_BYTE, NULL);
 
 	video->pbo_active = 1;
 
