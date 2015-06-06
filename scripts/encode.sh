@@ -10,7 +10,7 @@ AUDIO="1"
 VIDEO="1"
 
 QUALITY="19"
-BITRATE="8200k"
+BITRATE="6500k"
 MODE="vbr"
 
 AQUALITY="1"
@@ -30,7 +30,7 @@ showhelp () {
 	echo "                             default is ${VIDEO}"
 	echo "  -a, --audio=NUM           audio stream number"
 	echo "                             default is ${AUDIO}"
-	echo "  -m, --mode=MODE           video bitrate mode (vbr or cbr)"
+	echo "  -m, --mode=MODE           video bitrate mode (vbr, abr or cbr)"
 	echo "                             default mode is ${MODE}"
 	echo "  --audio-mode=MODE         audio bitrate mode (vbr or cbr)"
 	echo "                             default mode is ${AMODE}"
@@ -69,7 +69,7 @@ while true; do
 		-q|--quality)
 			if [ ${MODE} == vbr ]; then
 				QUALITY="$2"
-			else
+			else # abr and cbr
 				BITRATE="$2"
 			fi
 			shift 2
@@ -77,7 +77,7 @@ while true; do
 		--audio-quality)
 			if [ ${AMODE} == vbr ]; then
 				AQUALITY="$2"
-			else
+			else # cbr
 				ABITRATE="$2"
 			fi
 			shift 2
@@ -129,8 +129,10 @@ AENCOPTS="-c:a libmp3lame"
 
 if [ "$MODE" == "vbr" ]; then
 	ENCOPTS="$ENCOPTS -crf $QUALITY"
-elif [ "$MODE" == "cbr" ]; then
+elif [ "$MODE" == "abr" ]; then
 	ENCOPTS="$ENCOPTS -b:v $BITRATE"
+elif [ "$MODE" == "cbr" ]; then
+	ENCOPTS="$ENCOPTS -b:v $BITRATE -minrate $BITRATE -maxrate $BITRATE -bufsize 1024k"
 else
 	echo "Invalid video bitrate mode."
 	exit 1
@@ -148,6 +150,6 @@ fi
 glc-play "${FILE}" -o - -a "${AUDIO}" | ffmpeg -i - $AENCOPTS "${AUDIOTMP}"
 
 glc-play "${FILE}" -o - -y "${VIDEO}" | \
-	ffmpeg -i - -i "${AUDIOTMP}" -c:a copy $ENCOPTS $ADDOPTS "${OUT}"
+	ffmpeg -i - -i "${AUDIOTMP}" -c:a copy $ENCOPTS $ADDOPTS -y "${OUT}"
 
 rm -f "${AUDIOTMP}"
