@@ -35,13 +35,16 @@ showhelp () {
 	echo "  --audio-mode=MODE         audio bitrate mode (vbr or cbr)"
 	echo "                             default mode is ${AMODE}"
 	echo "  -q, --quality=VAL         video quality parameter"
-	echo "                             sets CRF in vbr mode, bitrate in cbr mode"
-	echo "                             default is ${QUALITY} (vbr) or ${BITRATE} (cbr)"
+	echo "                             sets CRF in vbr mode, bitrate in abr/cbr mode"
+	echo "                              that means -m needs to be passed before -q"
+	echo "                             default is ${QUALITY} (vbr) or ${BITRATE} (abr/cbr)"
 	echo "  --audio-quality=VAL       audio quality parameter"
-	echo "                             sets quality in VBR mode, bitrate in cbr mode"
+	echo "                             sets quality in vbr mode, bitrate in cbr mode"
+	echo "                              that means --audio-mode needs to be passed before --audio-quality"
 	echo "                             default is ${AQUALITY} (vbr) or ${ABITRATE} (cbr)"
 	echo "  -f, --outfmt=FORMAT       output container format"
 	echo "                             default is ${OUTFMT}"
+	echo "                             -f is ignored when -o is given"
 	echo "  -x, --addopts=OPTS        additional ffmpeg options"
 	echo "  -h, --help                show this help"
 }
@@ -52,10 +55,13 @@ if [ $? != 0 ]; then showhelp; exit 1; fi
 
 eval set -- "$OPT_TMP"
 
+OUT_WAS_SET=0
+
 while true; do
 	case "$1" in
 		-o|--out)
 			OUT="$2"
+			OUT_WAS_SET=1
 			shift 2
 			;;
 		-m|--mode)
@@ -115,12 +121,14 @@ while true; do
 	esac
 done
 
+
 for arg do FILE=$arg; done
 if [ "$FILE" == "" ]; then
 	showhelp
 	exit 1
 fi
 
+[ $OUT_WAS_SET -eq 0 ] && OUT="video.${OUTFMT}" # -f may have changed $OUTFMT
 [ "$OUTFMT" == "mp4" ] && ADDOPTS="$ADDOPTS -movflags +faststart"
 
 AUDIOTMP="_tmp_audio$$.mp3"
