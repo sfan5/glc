@@ -249,10 +249,14 @@ If you have resized the window while capturing, you need to add **%d** to file n
 ### Audio stream (WAV)
 	glc-play [stream file] -a NUM -o audio.wav
 
-## Encoding
-Video encoding is a complex business and if you just want a nice .mp4, use [scripts/encode.sh](scripts/encode.sh) included in the source distribution package.
+# Encoding
+Video encoding is a complex business and if you just want a nice .mp4, use [encode.sh](scripts/encode.sh) included in the source distribution package.
 
-	./encode.sh [stream file] -o mynicefragvid.mp4
+	scripts/encode.sh [stream file] -o mynicefragvid.mp4
+
+Or if you prefer WebM use [encode-webm.sh](scripts/encode-webm.sh):
+
+	scripts/encode-webm.sh [stream file] -o mynicefragvid.webm
 
 It is possible export audio and video to pipe and tell encoding applications to read from pipe. It is often much faster and we are going to use it in our examples.
 
