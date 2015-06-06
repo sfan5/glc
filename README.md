@@ -1,17 +1,16 @@
 # About glc
-**glc** is an [ALSA](http://en.wikipedia.org/wiki/Advanced_Linux_Sound_Architecture ALSA) & [OpenGL](http://en.wikipedia.org/wiki/OpenGL) capture tool for Linux. It consists of a generic video capture, playback and processing library and a set of tools built around that library. **glc** should be able to capture any application that uses ALSA for sound and OpenGL for drawing. It is still a relatively new project but already has a long list of features.
+**glc** is an [ALSA](http://en.wikipedia.org/wiki/Advanced_Linux_Sound_Architecture) & [OpenGL](http://en.wikipedia.org/wiki/OpenGL) capture tool for Linux. It consists of a generic video capture, playback and processing library and a set of tools built around that library. **glc** should be able to capture any application that uses ALSA for sound and OpenGL for drawing. It is still a relatively new project but already has a long list of features.
 
 **glc** is inspired by [yukon](https://devel.neopsis.com/projects/yukon) (another, excellent real-time video capture tool for Linux) and [Fraps](http://en.wikipedia.org/wiki/Fraps) (a popular Windows tool for the same purpose).
 
 # Features / Highlights
- * The complete [source code](Develop) is available and licenced under zlib-style licence.
+ * Open Source and licenced under zlib-style licence.
  * Thread-based architechture takes full advantage of multicore-CPUs.
  * Support for multiple simultaneous audio and video streams.
  * Reads frames asynchronously from GPU using **GL_ARB_pixel_buffer_object** extension.
  * Does enforce fps cap only in the captured stream.
  * If the application can play audio using ALSA, **glc** can record it regardless of sound card's capabilities.
  * Support for recording voice to a separate audio stream.
- * Stores color correction information and applies it at playback.
  * Minimal application overhead (eg. slow HDD does not slow program down).
  * Fast arbitrary ratio video scaling with bilinear filtering.
  * Does colorspace conversion to YCbCr 420jpeg which cuts stream size in half.
@@ -109,9 +108,9 @@ Start or stop capturing when **HOTKEY** is pressed. **<Shift>** and **<Ctrl>** m
 _default: <Shift>F8_
 
 ### --no-pbo
-Using GL_ARB_pixel_buffer_object is possible to retrieve data from GPU to system memory while application is drawing the next frame. See NVIDIA's [http://http.download.nvidia.com/developer/Papers/2005/Fast_Texture_Transfers/Fast_Texture_Transfers.pdf document] about fast texture transfers.
+Using GL_ARB_pixel_buffer_object is possible to retrieve data from GPU to system memory while application is drawing the next frame. See [NVIDIA's  document](http://http.download.nvidia.com/developer/Papers/2005/Fast_Texture_Transfers/Fast_Texture_Transfers.pdf) about fast texture transfers.
 
-_default: GL_ARB_pixel_buffer_object is used if present_
+_default: GL_ARB_pixel_buffer_object is used if available_
 
 ### -z, --compression=METHOD
 **glc** supports stream compression using [QuickLZ](http://www.quicklz.com/) (**quicklz**), [LZO](http://www.oberhumer.com/opensource/lzo/) (**lzo**) or [LZJB](http://en.wikipedia.org/wiki/LZJB) (**lzjb**). Setting this to **none** disables compression.
@@ -136,7 +135,7 @@ Log messages with lesser than, or equal to **LEVEL** level. Levels are
  * 3 - information
  * 4 - debug
 
-_default: do not log messages_
+_default: messages are not logged_
 
 ### -l, --log-file=FILE
 Write log to **FILE**. Like in **-o**, **%d** is expanded to program's pid.
@@ -146,7 +145,7 @@ _default: stderr_
 ### --audio-skip
 Currently audio capture is done via hooking snd_pcm_write*() and snd_pcm_mmap_*() functions. When application sends data to ALSA, **glc** copies it to a temporary location and sends signal to a thread which writes the data to actual capture buffer. If subsequent call to hooked ALSA write function occurs before the thread has finished writing data to the buffer, **glc** either skips new data or waits until the thread has finished depending on whether **--audio-skip** is set.
 
-Since in ALSA's asynchronous mode write calls can occur from signal handlers, **glc** must use [http://en.wikipedia.org/wiki/Busy_waiting busy waiting] to wait for the thread which inflicts an additional overhead.
+Since in ALSA's asynchronous mode write calls can occur from signal handlers, **glc** must use [busy waiting](http://en.wikipedia.org/wiki/Busy_waiting) to wait for the thread which inflicts an additional overhead.
 
 _default: audio skipping disabled_
 
@@ -192,7 +191,7 @@ To play audio, execute
 
 	glc-play [stream file] -a 1 -o - | mplayer -demuxer lavf -
 
-Using FIFOs it is possible to play both streams simultaneously (with **play.sh**): 
+Using FIFOs it is possible to play both streams simultaneously (with [play.sh](scripts/play.sh)): 
 
 	scripts/play.sh [stream file]
 
@@ -213,7 +212,7 @@ export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/home/pyry/tmp/glc/lib64:/home/pyry/t
 ```
 
 # Exporting and encoding of captured streams
-glc-play is able to export audio streams in [WAV](http://en.wikipedia.org/wiki/WAV) and video streams in [YUV4MPEG](http://mjpeg.sourceforge.net/), [BMP](http://en.wikipedia.org/wiki/BMP_file_format) or [PNG](http://en.wikipedia.org/wiki/Portable_Network_Graphics) files for transcoding into a commonly playable video format.
+glc-play is able to export audio streams in [WAV](http://en.wikipedia.org/wiki/WAV) and video streams in [YUV4MPEG](http://wiki.multimedia.cx/index.php?title=YUV4MPEG2), [BMP](http://en.wikipedia.org/wiki/BMP_file_format) or [PNG](http://en.wikipedia.org/wiki/Portable_Network_Graphics) files for transcoding into a commonly playable video format.
 
 Please note that while glc is able to handle multiple dynamic audio and video streams, common video containers and formats usually don't. Each stream must be extracted separately. If stream configuration changes (eg. window was resized when it was captured) glc-play generates a new export file for each configuration (**%d** is usually substituted with export file counter in file name).
 
@@ -222,6 +221,7 @@ To extract information about captured streams (eg. how many video and audio stre
 	glc-play [stream file] -i LEVEL
 
 where LEVEL is a verbosity level (try numbers between 1 and 6). For example with verbosity level 1, glc-play prints out something like
+
 	[   0.00s] video stream 1
 	[   0.00s] audio stream 1
 	[  54.87s] end of stream
@@ -329,7 +329,7 @@ sudo make install
 to cmake command options and continue build as usual.
 
 ## Licenses
-**glc** has zlib as primary licence. All code in _packetstream_ and _elfhacks_ is under zlib. All mandatory code in _glc_ is under zlib. However there is GPL- and CDDL-licenced code included in _glc_ source package. That code is however optional and can be disabled compile time for binary distributions.
+**glc** has [zlib](http://opensource.org/licenses/Zlib) as primary licence. All code in _packetstream_ and _elfhacks_ is under zlib. All mandatory code in _glc_ is under zlib. However there is GPL- and CDDL-licenced code included in _glc_ source package. That code is however optional and can be disabled compile time for binary distributions.
 
 ### QuickLZ
 QuickLZ (altough rewritten and a bit different algorithm, so technically it is just another RLE+LZ) implementation exists in _support/quicklz_. It is licensed under GPL and can be disabled at compile-time by giving cmake option **-DQUICKLZ:BOOL=OFF**. However author has stated that as long as the QuickLZ part can be easily identified as GPL code and optional at compile-time, it is OK to distribute it.
