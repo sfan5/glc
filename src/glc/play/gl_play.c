@@ -73,6 +73,9 @@ struct gl_play_s {
 	Atom wm_delete_window_atom;
 	Atom net_wm_state_atom;
 	Atom net_wm_state_fullscreen_atom;
+
+	char *frame_temp;
+	uint8_t intra_frame;
 };
 
 int gl_play_thread_create_callback(void *ptr, void **threadptr);
@@ -593,6 +596,38 @@ int gl_handle_xevents(gl_play_t gl_play, glc_thread_state_t *state)
 	return 0;
 }
 
+#define ISALIGNED(ptr, n) (((uintptr_t) (ptr) & ((n) - 1)) == 0)
+void memxor2(void *dest, const void *a, size_t size)
+{ // dest[0..size] = dest[0..size] ^ a[0..size]
+	void *end = dest + size;
+	void *p0;
+	const void *p1;
+	uint8_t *b0 = (uint8_t*) dest;
+	const uint8_t *b1 = (const uint8_t*) a;
+
+	// Having matching alignment is very unlikely
+	// We'll just align the pointer that is used most
+	for(; !ISALIGNED(b0, 32) && b0 < (uint8_t*) end; b0++, b1++) {
+		*b0 = *b0 ^ *b1;
+	}
+
+
+	for(p0 = b0, p1 = b1; p0 < end; p0 += 32, p1 += 32) {
+		__asm__(
+			"vmovdqu (%1), %%ymm1;"
+			"vxorpd (%0), %%ymm1, %%ymm1;"
+			"vmovdqa %%ymm1, (%0);"
+			: /* no outputs */
+			: "r" (p0), "r" (p1)
+			: "ymm1"
+		);
+	}
+
+	for(b0 = (uint8_t*) p0, b1 = (const uint8_t*) p1; b0 < (const uint8_t*) end; b0++, b1++) {
+		*b0 = *b0 ^ *b1;
+	}
+}
+
 int gl_play_read_callback(glc_thread_state_t *state)
 {
 	gl_play_t gl_play = (gl_play_t) state->ptr;
@@ -638,6 +673,10 @@ int gl_play_read_callback(glc_thread_state_t *state)
 				format_msg->id, format_msg->format);
 			return EINVAL;
 		}
+		if(gl_play->frame_temp)
+			free(gl_play->frame_temp);
+		gl_play->frame_temp = malloc(gl_play->row * gl_play->h);
+		gl_play->intra_frame = 1;
 	} else if (state->header.type == GLC_MESSAGE_VIDEO_FRAME) {
 		pic_hdr = (glc_video_frame_header_t *) state->read_data;
 
@@ -651,6 +690,11 @@ int gl_play_read_callback(glc_thread_state_t *state)
 			return EINVAL;
 		}
 
+		if(gl_play->intra_frame == 1) {
+			memcpy(gl_play->frame_temp, &state->read_data[sizeof(glc_video_frame_header_t)], gl_play->row * gl_play->h);
+			gl_play->intra_frame = 0;
+		}
+
 		/* check if we have to draw this frame */
 		time = glc_state_time(gl_play->glc);
 		if (time > pic_hdr->time + gl_play->skip_threshold) {
@@ -658,8 +702,14 @@ int gl_play_read_callback(glc_thread_state_t *state)
 			return 0;
 		}
 
+
 		/* draw first, measure and sleep after */
-		gl_play_draw_video_frame_messageture(gl_play, &state->read_data[sizeof(glc_video_frame_header_t)]);
+		if(gl_play->intra_frame == 1) {
+			gl_play_draw_video_frame_messageture(gl_play, &state->read_data[sizeof(glc_video_frame_header_t)]);
+		} else {
+			memxor2(gl_play->frame_temp, &state->read_data[sizeof(glc_video_frame_header_t)], gl_play->row * gl_play->h);
+			gl_play_draw_video_frame_messageture(gl_play, gl_play->frame_temp);
+		}
 
 		/* wait until actual drawing is done */
 		glFinish();

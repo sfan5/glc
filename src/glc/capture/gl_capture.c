@@ -129,6 +129,10 @@ struct gl_capture_s {
 	glBindBufferProc glBindBuffer;
 	glMapBufferProc glMapBuffer;
 	glUnmapBufferProc glUnmapBuffer;
+
+	char *last_frame;
+	char *frame_temp;
+	uint8_t intra_frame;
 };
 
 int gl_capture_get_video_stream(gl_capture_t gl_capture,
@@ -760,6 +764,14 @@ int gl_capture_update_video_stream(gl_capture_t gl_capture,
 				/** \todo race condition? */
 			}
 		}
+
+		if(gl_capture->last_frame)
+			free(gl_capture->last_frame);
+		gl_capture->last_frame = malloc(video->row * video->ch);
+		if(gl_capture->frame_temp)
+			free(gl_capture->frame_temp);
+		gl_capture->frame_temp = malloc(video->row * video->ch);
+		gl_capture->intra_frame = 1;
 	}
 
 
@@ -769,6 +781,47 @@ int gl_capture_update_video_stream(gl_capture_t gl_capture,
 
 	return 0;
 }
+
+#define ISALIGNED(ptr, n) (((uintptr_t) (ptr) & ((n) - 1)) == 0)
+void memxor(void *dest, const void *a, const void *b, size_t size)
+{ // dest[0..size] = a[0..size] ^ b[0..size]
+	const void *end = a + size;
+	const void *p0;
+	const void *p1;
+	void *pd;
+	const uint8_t *b0 = (const uint8_t*) a;
+	const uint8_t *b1 = (const uint8_t*) b;
+	uint8_t *bd = (uint8_t*) dest;
+
+	// Having matching alignment is very unlikely
+	// b0 and b1 happen to have matching alignment on my machine so this code tries to align those
+	for(; (!ISALIGNED(b0, 32) || !ISALIGNED(b1, 32)) && b0 < (const uint8_t*) end; b0++, b1++, bd++) {
+		*bd = *b0 ^ *b1;
+	}
+
+	for(p0 = b0, p1 = b1, pd = bd; p0 < end; p0 += 32, p1 += 32, pd += 32) {
+		__asm__(
+			"vmovdqa (%1), %%ymm1;"
+			"vxorpd (%0), %%ymm1, %%ymm1;"
+			"vmovdqu %%ymm1, (%2);"
+			: /* no outputs */
+			: "r" (p0), "r" (p1), "r" (pd)
+			: "ymm1"
+		);
+	}
+
+	for(b0 = (const uint8_t*) p0, b1 = (const uint8_t*) p1, bd = (uint8_t*) pd; b0 < (const uint8_t*) end; b0++, b1++, bd++) {
+		*bd = *b0 ^ *b1;
+	}
+}
+
+#define SWAP(a, b, t) \
+	do { \
+		t _tmp; \
+		_tmp = (a); \
+		(a) = (b); \
+		(b) = _tmp; \
+	} while(0);
 
 int gl_capture_frame(gl_capture_t gl_capture, Display *dpy, GLXDrawable drawable)
 {
@@ -844,7 +897,15 @@ int gl_capture_frame(gl_capture_t gl_capture, Display *dpy, GLXDrawable drawable
 					video->row * video->ch, PS_ACCEPT_FAKE_DMA)))
 		goto cancel;
 
-		ret = gl_capture_get_pixels(gl_capture, video, dma);
+		if(gl_capture->intra_frame == 1) {
+			ret = gl_capture_get_pixels(gl_capture, video, gl_capture->last_frame);
+			memcpy(dma, gl_capture->last_frame, video->row * video->ch);
+			gl_capture->intra_frame = 0;
+		} else {
+			ret = gl_capture_get_pixels(gl_capture, video, gl_capture->frame_temp);
+			memxor(dma, gl_capture->frame_temp, gl_capture->last_frame, video->row * video->ch);
+			SWAP(gl_capture->frame_temp, gl_capture->last_frame, char*);
+		}
 	}
 
 	if ((gl_capture->flags & GL_CAPTURE_LOCK_FPS) &&
