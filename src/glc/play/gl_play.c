@@ -611,7 +611,6 @@ void memxor2(void *dest, const void *a, size_t size)
 		*b0 = *b0 ^ *b1;
 	}
 
-
 	for(p0 = b0, p1 = b1; p0 < end; p0 += 32, p1 += 32) {
 		__asm__(
 			"vmovdqu (%1), %%ymm1;"
@@ -690,9 +689,11 @@ int gl_play_read_callback(glc_thread_state_t *state)
 			return EINVAL;
 		}
 
+		// Decoding still needs to be done even if the frame will be dropped
 		if(gl_play->intra_frame == 1) {
 			memcpy(gl_play->frame_temp, &state->read_data[sizeof(glc_video_frame_header_t)], gl_play->row * gl_play->h);
-			gl_play->intra_frame = 0;
+		} else {
+			memxor2(gl_play->frame_temp, &state->read_data[sizeof(glc_video_frame_header_t)], gl_play->row * gl_play->h);
 		}
 
 		/* check if we have to draw this frame */
@@ -706,8 +707,8 @@ int gl_play_read_callback(glc_thread_state_t *state)
 		/* draw first, measure and sleep after */
 		if(gl_play->intra_frame == 1) {
 			gl_play_draw_video_frame_messageture(gl_play, &state->read_data[sizeof(glc_video_frame_header_t)]);
+			gl_play->intra_frame = 0;
 		} else {
-			memxor2(gl_play->frame_temp, &state->read_data[sizeof(glc_video_frame_header_t)], gl_play->row * gl_play->h);
 			gl_play_draw_video_frame_messageture(gl_play, gl_play->frame_temp);
 		}
 
