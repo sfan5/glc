@@ -107,10 +107,10 @@ Start or stop capturing when **HOTKEY** is pressed. **<Shift>** and **<Ctrl>** m
 
 _default: <Shift>F8_
 
-### --no-pbo
+### --pbo
 Using GL_ARB_pixel_buffer_object is possible to retrieve data from GPU to system memory while application is drawing the next frame. See [NVIDIA's  document](http://http.download.nvidia.com/developer/Papers/2005/Fast_Texture_Transfers/Fast_Texture_Transfers.pdf) about fast texture transfers.
 
-_default: GL_ARB_pixel_buffer_object is used if available_
+_default: GL_ARB_pixel_buffer_object is not used_
 
 ### -z, --compression=METHOD
 **glc** supports stream compression using [QuickLZ](http://www.quicklz.com/) (**quicklz**), [LZO](http://www.oberhumer.com/opensource/lzo/) (**lzo**) or [LZJB](http://en.wikipedia.org/wiki/LZJB) (**lzjb**). Setting this to **none** disables compression.
